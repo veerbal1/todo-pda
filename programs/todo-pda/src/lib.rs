@@ -22,19 +22,19 @@ pub mod todo_pda {
         Ok(())
     }
 
-    pub fn mark_complete(ctx: Context<MarkComplete>, todo_index: u64) -> Result<()> {
+    pub fn mark_complete(ctx: Context<MarkComplete>, _todo_index: u64) -> Result<()> {
         let todo = &mut ctx.accounts.todo;
         todo.is_completed = true;
         Ok(())
     }
 
-    pub fn update_todo(ctx: Context<UpdateTodo>, todo_index: u64, new_title: String) -> Result<()> {
+    pub fn update_todo(ctx: Context<UpdateTodo>, _todo_index: u64, new_title: String) -> Result<()> {
         let todo = &mut ctx.accounts.todo;
         todo.title = new_title;
         Ok(())
     }
 
-    pub fn delete_todo(ctx: Context<DeleteTodo>, _todo_index: u64) -> Result<()> {
+    pub fn delete_todo(_ctx: Context<DeleteTodo>, _todo_index: u64) -> Result<()> {
         // Account automatically close hoga!
         Ok(())
     }
@@ -42,7 +42,7 @@ pub mod todo_pda {
 
 #[derive(Accounts)]
 pub struct InitializeCounter<'info> {
-    #[account(init, seeds=[user.key().as_ref(), b"counter"], space = TodoCounter::INIT_SPACE, bump, payer = user)]
+    #[account(init, seeds=[user.key().as_ref(), b"counter"], space = 8 + TodoCounter::INIT_SPACE, bump, payer = user)]
     pub counter: Account<'info, TodoCounter>,
 
     #[account(mut)]
