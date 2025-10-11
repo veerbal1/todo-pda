@@ -2,6 +2,21 @@ use anchor_lang::prelude::*;
 
 declare_id!("3KycJfDcJV8gLSeaLMKU8PSNiKGNCsdihiJc64kcVFmJ");
 
+#[error_code]
+pub enum TodoError {
+    #[msg("Title can't be empty")]
+    TitleEmpty,
+
+    #[msg("Title cannot be only whitespace")]
+    TitleWhitespaceOnly,
+
+    #[msg("Title should have minimum 3 length")]
+    TitleTooShort,
+    
+    #[msg("Title can't be greater then 200 chars")] // Max length message  
+    TitleTooLong,
+}
+
 #[program]
 pub mod todo_pda {
     use super::*;
@@ -14,6 +29,8 @@ pub mod todo_pda {
     }
 
     pub fn create_todo(ctx: Context<CreateTodo>, title: String) -> Result<()> {
+        validate_title(&title)?;
+
         let counter = &mut ctx.accounts.counter;
         let new_todo = &mut ctx.accounts.todo;
         new_todo.title = title;
@@ -29,6 +46,7 @@ pub mod todo_pda {
     }
 
     pub fn update_todo(ctx: Context<UpdateTodo>, _todo_index: u64, new_title: String) -> Result<()> {
+        validate_title(&new_title)?;
         let todo = &mut ctx.accounts.todo;
         todo.title = new_title;
         Ok(())
@@ -126,4 +144,24 @@ pub struct DeleteTodo<'info> {
         bump
     )]
     pub todo: Account<'info, Todo>,
+}
+
+fn validate_title(input: &String) -> Result<()> {
+    if input.is_empty() {
+        return Err(TodoError::TitleEmpty.into());
+    }
+
+    if input.trim().is_empty() {
+        return Err(TodoError::TitleWhitespaceOnly.into());
+    }
+
+    if input.len() < 3 {
+        return Err(TodoError::TitleTooShort.into());
+    }
+
+    if input.len() > 200 {
+        return  Err(TodoError::TitleTooLong.into());
+    }
+
+    Ok(())
 }
