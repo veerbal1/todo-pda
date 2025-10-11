@@ -216,7 +216,7 @@ describe("todo-pda", () => {
     expect(counter.nextIndex.toNumber()).to.equal(4);
   });
 
-  describe.skip("Input Validation Tests", () => {
+  describe("Input Validation Tests", () => {
     it("Fails to create todo with empty title", async () => {
       const [counterPDA] = getCounterPDA();
       const [todoPDA] = getTodoPDA(4);
@@ -467,7 +467,7 @@ describe("todo-pda", () => {
       });
 
       console.log("Total todos for user:", accounts.length);
-      expect(accounts.length).to.equal(3); // We have 3 todos (index 0, 1, 3)
+      expect(accounts.length).to.equal(5); // We have 5 todos (index 0, 1, 3, 4, 5)
     });
 
     it("Fetches only incomplete todos", async () => {
@@ -489,7 +489,7 @@ describe("todo-pda", () => {
       });
 
       console.log("Incomplete todos:", accounts.length);
-      expect(accounts.length).to.equal(2); // Todos at index 1 and 3 are incomplete
+      expect(accounts.length).to.equal(4); // Todos at index 1, 3, 4, 5 are incomplete
     });
 
     it("Fetches only completed todos", async () => {
@@ -523,7 +523,7 @@ describe("todo-pda", () => {
       const accounts = await connection.getProgramAccounts(program.programId);
 
       console.log("Total program accounts:", accounts.length);
-      expect(accounts.length).to.equal(4); // 3 todos + 1 counter
+      expect(accounts.length).to.equal(6); // 5 todos + 1 counter
     });
 
     it("Manually decodes and displays all todos", async () => {
@@ -544,7 +544,7 @@ describe("todo-pda", () => {
         console.log(`Title: ${todo.title}, Completed: ${todo.isCompleted}`);
       }
 
-      expect(accounts.length).to.equal(3);
+      expect(accounts.length).to.equal(5);
     });
   });
 });
