@@ -213,4 +213,229 @@ describe("todo-pda", () => {
     const counter = await program.account.todoCounter.fetch(counterPDA);
     expect(counter.nextIndex.toNumber()).to.equal(4);
   });
+
+  describe("Input Validation Tests", () => {
+    it("Fails to create todo with empty title", async () => {
+      const [counterPDA] = getCounterPDA();
+      const [todoPDA] = getTodoPDA(4);
+
+      try {
+        await program.methods
+          .createTodo("")
+          .accountsPartial({
+            user: user.publicKey,
+            counter: counterPDA,
+            todo: todoPDA,
+          })
+          .rpc();
+
+        expect.fail("Should have thrown an error for empty title");
+      } catch (err) {
+        expect(err.error.errorMessage).to.equal("Title can't be empty");
+        expect(err.error.errorCode.code).to.equal("TitleEmpty");
+      }
+    });
+
+    it("Fails to create todo with whitespace-only title", async () => {
+      const [counterPDA] = getCounterPDA();
+      const [todoPDA] = getTodoPDA(4);
+
+      try {
+        await program.methods
+          .createTodo("   ")
+          .accountsPartial({
+            user: user.publicKey,
+            counter: counterPDA,
+            todo: todoPDA,
+          })
+          .rpc();
+
+        expect.fail("Should have thrown an error for whitespace-only title");
+      } catch (err) {
+        expect(err.error.errorMessage).to.equal("Title cannot be only whitespace");
+        expect(err.error.errorCode.code).to.equal("TitleWhitespaceOnly");
+      }
+    });
+
+    it("Fails to create todo with title too short (< 3 chars)", async () => {
+      const [counterPDA] = getCounterPDA();
+      const [todoPDA] = getTodoPDA(4);
+
+      try {
+        await program.methods
+          .createTodo("ab")
+          .accountsPartial({
+            user: user.publicKey,
+            counter: counterPDA,
+            todo: todoPDA,
+          })
+          .rpc();
+
+        expect.fail("Should have thrown an error for title too short");
+      } catch (err) {
+        expect(err.error.errorMessage).to.equal("Title should have minimum 3 length");
+        expect(err.error.errorCode.code).to.equal("TitleTooShort");
+      }
+    });
+
+    it("Fails to create todo with title too long (> 200 chars)", async () => {
+      const [counterPDA] = getCounterPDA();
+      const [todoPDA] = getTodoPDA(4);
+
+      const longTitle = "a".repeat(201);
+
+      try {
+        await program.methods
+          .createTodo(longTitle)
+          .accountsPartial({
+            user: user.publicKey,
+            counter: counterPDA,
+            todo: todoPDA,
+          })
+          .rpc();
+
+        expect.fail("Should have thrown an error for title too long");
+      } catch (err) {
+        expect(err.error.errorMessage).to.equal("Title can't be greater then 200 chars");
+        expect(err.error.errorCode.code).to.equal("TitleTooLong");
+      }
+    });
+
+    it("Successfully creates todo with exactly 3 characters", async () => {
+      const [counterPDA] = getCounterPDA();
+      const [todoPDA] = getTodoPDA(4);
+
+      await program.methods
+        .createTodo("abc")
+        .accountsPartial({
+          user: user.publicKey,
+          counter: counterPDA,
+          todo: todoPDA,
+        })
+        .rpc();
+
+      const todo = await program.account.todo.fetch(todoPDA);
+      expect(todo.title).to.equal("abc");
+      expect(todo.isCompleted).to.be.false;
+
+      const counter = await program.account.todoCounter.fetch(counterPDA);
+      expect(counter.nextIndex.toNumber()).to.equal(5);
+    });
+
+    it("Successfully creates todo with exactly 200 characters", async () => {
+      const [counterPDA] = getCounterPDA();
+      const [todoPDA] = getTodoPDA(5);
+
+      const maxLengthTitle = "a".repeat(200);
+
+      await program.methods
+        .createTodo(maxLengthTitle)
+        .accountsPartial({
+          user: user.publicKey,
+          counter: counterPDA,
+          todo: todoPDA,
+        })
+        .rpc();
+
+      const todo = await program.account.todo.fetch(todoPDA);
+      expect(todo.title).to.equal(maxLengthTitle);
+      expect(todo.isCompleted).to.be.false;
+
+      const counter = await program.account.todoCounter.fetch(counterPDA);
+      expect(counter.nextIndex.toNumber()).to.equal(6);
+    });
+
+    it("Fails to update todo with empty title", async () => {
+      const [todoPDA] = getTodoPDA(4);
+
+      try {
+        await program.methods
+          .updateTodo(new BN(4), "")
+          .accountsPartial({
+            user: user.publicKey,
+            todo: todoPDA,
+          })
+          .rpc();
+
+        expect.fail("Should have thrown an error for empty title");
+      } catch (err) {
+        expect(err.error.errorMessage).to.equal("Title can't be empty");
+        expect(err.error.errorCode.code).to.equal("TitleEmpty");
+      }
+    });
+
+    it("Fails to update todo with whitespace-only title", async () => {
+      const [todoPDA] = getTodoPDA(4);
+
+      try {
+        await program.methods
+          .updateTodo(new BN(4), "\t\n  ")
+          .accountsPartial({
+            user: user.publicKey,
+            todo: todoPDA,
+          })
+          .rpc();
+
+        expect.fail("Should have thrown an error for whitespace-only title");
+      } catch (err) {
+        expect(err.error.errorMessage).to.equal("Title cannot be only whitespace");
+        expect(err.error.errorCode.code).to.equal("TitleWhitespaceOnly");
+      }
+    });
+
+    it("Fails to update todo with title too short", async () => {
+      const [todoPDA] = getTodoPDA(4);
+
+      try {
+        await program.methods
+          .updateTodo(new BN(4), "xy")
+          .accountsPartial({
+            user: user.publicKey,
+            todo: todoPDA,
+          })
+          .rpc();
+
+        expect.fail("Should have thrown an error for title too short");
+      } catch (err) {
+        expect(err.error.errorMessage).to.equal("Title should have minimum 3 length");
+        expect(err.error.errorCode.code).to.equal("TitleTooShort");
+      }
+    });
+
+    it("Fails to update todo with title too long", async () => {
+      const [todoPDA] = getTodoPDA(4);
+
+      const longTitle = "b".repeat(201);
+
+      try {
+        await program.methods
+          .updateTodo(new BN(4), longTitle)
+          .accountsPartial({
+            user: user.publicKey,
+            todo: todoPDA,
+          })
+          .rpc();
+
+        expect.fail("Should have thrown an error for title too long");
+      } catch (err) {
+        expect(err.error.errorMessage).to.equal("Title can't be greater then 200 chars");
+        expect(err.error.errorCode.code).to.equal("TitleTooLong");
+      }
+    });
+
+    it("Successfully updates todo with valid title", async () => {
+      const [todoPDA] = getTodoPDA(4);
+
+      await program.methods
+        .updateTodo(new BN(4), "Updated title")
+        .accountsPartial({
+          user: user.publicKey,
+          todo: todoPDA,
+        })
+        .rpc();
+
+      const todo = await program.account.todo.fetch(todoPDA);
+      expect(todo.title).to.equal("Updated title");
+    });
+  });
 });
