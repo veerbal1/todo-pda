@@ -35,6 +35,7 @@ pub mod todo_pda {
         let new_todo = &mut ctx.accounts.todo;
         new_todo.title = title;
         new_todo.is_completed = false;
+        new_todo.user = *ctx.accounts.user.key;
         counter.next_index += 1;
         Ok(())
     }
@@ -94,9 +95,10 @@ pub struct TodoCounter {
 #[account]
 #[derive(InitSpace)]
 pub struct Todo {
-    #[max_len(200)]
-    pub title: String,
+    pub user: Pubkey,
     pub is_completed: bool,
+    #[max_len(200)]
+    pub title: String
 }
 
 #[derive(Accounts)]
